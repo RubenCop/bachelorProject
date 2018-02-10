@@ -1,0 +1,18 @@
+
+Remarks:
+-	No Programming Language defined
+-	Not stated how long it would take to pre-process the training
+	data using Watershed
+-	
+Remarks 3D-CNN:
+- 	Channel parameter l is probably not needed, since the image might be converted to grey-scale only
+
+
+Interesting questions and remarks for own project:
+- Using U-Net to find interesting region in CT-scan (i.e. the teeth)?
+- Train network on peregrine?
+- Use continuous output function (described on page 6 of paper, higlighted in green)
+- 
+
+
+-Search for more info on U-net training
