@@ -1,0 +1,2 @@
+import readAndChop
+readAndChop.readAndChop()
