@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
 
-IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
-NR_SLICES = 20 #NR of axial slices used for one volume
+IMG_RESIZE = 40 #Pixel dimensions of axial slices after resize
+NR_SLICES = 10 #NR of axial slices used for one volume
 
-n_classes = 2
+n_classes = 7
 
 x = tf.placeholder('float')
 y = tf.placeholder('float')
@@ -24,7 +24,7 @@ def maxpool3d(x):
 def convolutional_neural_network(x):
     weights = {'W_conv1':tf.Variable(tf.random_normal([3,3,3,1,32])),
                'W_conv2':tf.Variable(tf.random_normal([3,3,3,32,64])),
-               'W_fc':tf.Variable(tf.random_normal([54080,1024])),
+               'W_fc':tf.Variable(tf.random_normal([19200,1024])),
                'out':tf.Variable(tf.random_normal([1024, n_classes]))}
 
     biases = {'b_conv1':tf.Variable(tf.random_normal([32])),
@@ -40,7 +40,11 @@ def convolutional_neural_network(x):
     conv2 = tf.nn.relu(conv3d(conv1, weights['W_conv2']) + biases['b_conv2'])
     conv2 = maxpool3d(conv2)
 
-    fc = tf.reshape(conv2,[-1, 54080])
+    #13*13*5*64
+    #64 is the amount of channels (features) from the last conv layer
+    #13 and 5 are the image volume sizes after the 2 pool layers, which use windowsize 2 and stride 2
+    # -1 signifies the automatically determined batch_size
+    fc = tf.reshape(conv2,[-1, 19200]) #13*13*5*64
     fc = tf.nn.relu(tf.matmul(fc, weights['W_fc'])+biases['b_fc'])
     fc = tf.nn.dropout(fc, keep_rate)
 
@@ -49,9 +53,9 @@ def convolutional_neural_network(x):
     return output
 
 def train_neural_network(x):
-    much_data = np.load('muchdata-50-50-20.npy')
-    train_data = much_data[:-5]
-    validation_data = much_data[:-5]
+    dataset = np.load('muchdata-40-40-10.npy')
+    train_data = dataset[:-2]
+    validation_data = dataset[:-2]
 
     prediction = convolutional_neural_network(x)
     cost = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction,labels=y))
@@ -65,8 +69,8 @@ def train_neural_network(x):
         for epoch in range(hm_epochs):
             epoch_loss = 0
             for data in train_data:
-                X = data[0]
-                Y = data[1]
+                X = data[0] #Data
+                Y = data[1] #Labels
                 _, c = sess.run([optimizer, cost], feed_dict={x: X, y: Y})
                 epoch_loss += c
 

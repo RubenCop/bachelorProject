@@ -40,11 +40,11 @@ import cv2
 import numpy as np
 import math
 
-IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
-NR_SLICES = 20 #NR of axial slices used for one volume
+IMG_RESIZE = 40 #Pixel dimensions of axial slices after resize
+NR_SLICES = 10 #NR of axial slices used for one volume
 KERNEL_SIZE = 50
 
-store_path = '/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/' #'/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/'
+#store_path = '/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/' #'/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/'
 patCount = 0
 numPatients = 15
 
@@ -121,9 +121,10 @@ for num, patient in enumerate(patients):
     # print('pat:', patient)
     # if num%100==0:
     #     print('num:', num)
-
+    if num > 4:
+        break
     try:
-        img_data,label = process_data(patient,labels_df,IMG_RESIZE=IMG_RESIZE, NR_SLICES=NR_SLICES, visualize=True)
+        img_data,label = process_data(patient,labels_df,IMG_RESIZE=IMG_RESIZE, NR_SLICES=NR_SLICES, visualize=False)
         much_data.append([img_data,label])
     except KeyError as e:
         print('Data has no label')

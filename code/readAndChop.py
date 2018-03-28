@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 IMG_RESIZE = 50 #Pixels after resize
-KERNEL_SIZE = 50
+SUB_IMG_SIZE = 50
 store_path = '/media/ruben/Seagate Expansion Drive/bachelorProject/data/test/' #'/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/'
 patCount = 0
 numPatients = 1
@@ -38,12 +38,12 @@ def readAndChop():
             #image = cv2.resize(np.array(slices[50].pixel_array), (IMG_RESIZE,IMG_RESIZE))
             # plt.imshow(image, cmap='gray')
             # plt.show()
-            dims = int(width/KERNEL_SIZE)
+            dims = int(width/SUB_IMG_SIZE)
             nrSteps = dims * dims
             for idx in range(0,nrSteps):
-                rowIDX = int(idx/int(width/KERNEL_SIZE))
+                rowIDX = int(idx/int(width/SUB_IMG_SIZE))
                 colIDX = idx%dims
-                newimg = image[(rowIDX*KERNEL_SIZE):(rowIDX*KERNEL_SIZE)+KERNEL_SIZE, (colIDX*KERNEL_SIZE):(colIDX*KERNEL_SIZE)+KERNEL_SIZE]
+                newimg = image[(rowIDX*SUB_IMG_SIZE):(rowIDX*SUB_IMG_SIZE)+SUB_IMG_SIZE, (colIDX*SUB_IMG_SIZE):(colIDX*SUB_IMG_SIZE)+SUB_IMG_SIZE]
                 total = (newimg.sum(-1)).sum(-1)
                 if(total != 0):
                     if(teethSliceLow <= slice <= teethSliceHigh):
