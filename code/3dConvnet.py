@@ -1,7 +1,9 @@
 import tensorflow as tf
 import numpy as np
 
-IMG_RESIZE = 40 #Pixel dimensions of axial slices after resize
+#At the moment: online learning, one example at a time
+
+IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
 NR_SLICES = 10 #NR of axial slices used for one volume
 
 n_classes = 7
@@ -53,9 +55,10 @@ def convolutional_neural_network(x):
     return output
 
 def train_neural_network(x):
-    dataset = np.load('muchdata-40-40-10.npy')
+    dataset = np.load('muchdata-50-50-10.npy')
+    print('length dataset: ', len(dataset))
     train_data = dataset[:-2]
-    validation_data = dataset[:-2]
+    validation_data = dataset[-2:]
 
     prediction = convolutional_neural_network(x)
     cost = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction,labels=y))
