@@ -26,7 +26,7 @@ def maxpool3d(x):
 def convolutional_neural_network(x):
     weights = {'W_conv1':tf.Variable(tf.random_normal([3,3,3,1,32])),
                'W_conv2':tf.Variable(tf.random_normal([3,3,3,32,64])),
-               'W_fc':tf.Variable(tf.random_normal([19200,1024])),
+               'W_fc':tf.Variable(tf.random_normal([5997500,1024])),
                'out':tf.Variable(tf.random_normal([1024, n_classes]))}
 
     biases = {'b_conv1':tf.Variable(tf.random_normal([32])),
@@ -46,7 +46,7 @@ def convolutional_neural_network(x):
     #64 is the amount of channels (features) from the last conv layer
     #13 and 5 are the image volume sizes after the 2 pool layers, which use windowsize 2 and stride 2
     # -1 signifies the automatically determined batch_size
-    fc = tf.reshape(conv2,[-1, 19200]) #13*13*5*64
+    fc = tf.reshape(conv2,[-1, 5997500]) #13*13*5*64
     fc = tf.nn.relu(tf.matmul(fc, weights['W_fc'])+biases['b_fc'])
     fc = tf.nn.dropout(fc, keep_rate)
 
@@ -55,16 +55,17 @@ def convolutional_neural_network(x):
     return output
 
 def train_neural_network(x):
-    dataset = np.load('muchdata-50-50-10.npy')
+    dataset = np.load('3dData-50-50-10.npy')
     print('length dataset: ', len(dataset))
-    train_data = dataset[:-2]
-    validation_data = dataset[-2:]
+    print(np.shape(dataset[0][0])) #Print shape of dataset (number of slices, widht, heigh). Number of slices are the means of a box of widht*height*NR_SLICES
+    train_data = dataset[:-5]
+    validation_data = dataset[-5:]
 
     prediction = convolutional_neural_network(x)
     cost = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction,labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
     
-    hm_epochs = 10
+    hm_epochs = 100
     with tf.Session() as sess:
         #sess.run(tf.initialize_all_variables()) #deprecated
         sess.run(tf.global_variables_initializer())

@@ -28,11 +28,13 @@ import math
 IMG_RESIZE = 500 #Pixel dimensions of axial slices after resize
 NR_SLICES = 10 #NR of axial slices used for one volume
 SUB_IMG_SIZE = 50
-REDUNDANCY_THRESH = 0
+REDUNDANCY_THRESH = 1846427
 
 #store_path = '/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/' #'/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/'
 patCount = 0
 numPatients = 15
+
+totalList = []
 
 def chunks(l, n):
     for i in range(0, len(l), n):
@@ -45,9 +47,10 @@ def redundancy(list):
     for idx in range(0, len(list)):
         total = (list[idx].sum(-1)).sum(-1)
         if total > REDUNDANCY_THRESH:
-            return True
-        else:
+            totalList.append(total)
             return False
+        else:
+            return True
 
 
 #for i, patient in enumerate(patients[:numPatients]):
@@ -89,8 +92,12 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, visualize
     print(len(slices))
     print('nr steps: ', int(len(slices)/NR_SLICES))
     for count in range(0, int(len(slices)/NR_SLICES)*NR_SLICES, NR_SLICES): #stepsize = NR_SLICES, last slices are thrown away
-        for i in range(0, int(width/SUB_IMG_SIZE)):
-            image = np.array(slices[count+i].pixel_array)
+        print('new')
+        #for i in range(0, int(width/SUB_IMG_SIZE)):
+        for i in range(0, NR_SLICES):
+            print(len(slices), count+i, width/SUB_IMG_SIZE)
+
+            image = np.array(slices[count+i].pixel_array) #get every NR_SLICES images
             width, height = np.shape(image)
             dims = int(width/SUB_IMG_SIZE)
             nrSteps = dims*dims
@@ -117,25 +124,23 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, visualize
             #print('slice chunk:', np.shape(slice_chunk))
             #print(np.shape(new_slices))
             #final_slices.append(slice_chunk)
-            if not redundancy(new_slices[0]):
-                print('added chunk!')
+            if (not redundancy(new_slices[0])):
+                #print('added chunk!')
                 final_slices.append(slice_chunk)
+                if visualize:
+                    fig = plt.figure()
+                    for num, each_slice in enumerate(new_slices[0]):
+                        y = fig.add_subplot(2, 5, num+1)
+                        plt.imshow(each_slice)
+                    plt.show()
             else:
-                print('skipped chunk!')
-                #print('THROWN AWAY')
+                #print('skipped chunk!')
+                pass
             new_slices = []
-        print('count', count)
+        #print('count', count)
         imgList = []
 
     print(len(slices), len(final_slices))
-
-    if visualize:
-        fig = plt.figure()
-        for num, each_slice in enumerate(new_slices):
-            y = fig.add_subplot(4,5,num+1)
-            #new_image = cv2.resize(np.array(each_slice.pixel_array), (IMG_RESIZE,IMG_RESIZE))
-            plt.imshow(each_slice)
-        plt.show()
 
     #Make cleaner code in future
     print('label: ', label)
@@ -157,6 +162,7 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, visualize
     fig = plt.figure()
 
     print(np.shape(final_slices))
+    print('MEAN: ', math.ceil(np.mean(totalList)))
 
     return np.array(final_slices), label
 
@@ -165,13 +171,13 @@ for num, patient in enumerate(patients):
     # print('pat:', patient)
     # if num%100==0:
     #     print('num:', num)
-    if num > 0: #Get data of first x patients
-        break
+    # if num > 0: #Get data of first x patients
+    #     break
     try:
         img_data,label = process_data(num, patient,labels_df,IMG_RESIZE=IMG_RESIZE, NR_SLICES=NR_SLICES, visualize=False)
         much_data.append([img_data,label])
     except KeyError as e:
         print('Data has no label')
 
-    np.save('muchdata-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES), much_data)
-    print('Data saved in: muchdata-{}-{}-{}.npy'.format(SUB_IMG_SIZE, SUB_IMG_SIZE, NR_SLICES))
+    np.save('3dData-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES), much_data)
+    print('Data saved in: 3dData-{}-{}-{}.npy'.format(SUB_IMG_SIZE, SUB_IMG_SIZE, NR_SLICES))
