@@ -55,7 +55,7 @@ def convolutional_neural_network(x):
     return output
 
 def train_neural_network(x):
-    dataset = np.load('3dData-50-50-10.npy')
+    dataset = np.load('data/dentalArea/3dData-50-50-10.npy')
     print('length dataset: ', len(dataset))
     print(np.shape(dataset[0][0])) #Print shape of dataset (number of slices, widht, heigh). Number of slices are the means of a box of widht*height*NR_SLICES
     train_data = dataset[:-5]
