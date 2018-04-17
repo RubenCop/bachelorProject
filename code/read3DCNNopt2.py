@@ -107,7 +107,7 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
                 colIDX = idx%dims
                 newimg = image[(rowIDX*SUB_IMG_SIZE) : (rowIDX*SUB_IMG_SIZE)+SUB_IMG_SIZE, (colIDX*SUB_IMG_SIZE) : (colIDX*SUB_IMG_SIZE)+SUB_IMG_SIZE]
                 temp.append(newimg) #Temp contains squares of one slice
-            imgList.append(temp) #imgList contains squares of 10 slices
+            imgList.append(temp) #imgList contains squares of 10 slices in the end
             temp = []
         #print(np.shape(imgList)) #NR slices, NR images, width image, height image
         #print('dims: ', dims)
@@ -116,20 +116,21 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
             for imgListidx in range(0, NR_SLICES):
                 count+=1
                 newList.append(imgList[imgListidx][idx]) #append NR_SLICES images to newList
-            new_slices.append(newList)
+            new_slices.append(newList) #shape 1, 10, 50, 50
             newList = []
             #print(np.shape(new_slices))
             #for slice_chunk in chunks(new_slices, NR_SLICES):
-            slice_chunk = list(map(mean, zip(*new_slices[0])))
+            #slice_chunk = list(map(mean, zip(*new_slices[0]))) # new_slices[0] has shape 10, 50, 50, so 10 slices of sub block
+            print('testshape', np.shape(new_slices[0]))
             #print('slice chunk:', np.shape(slice_chunk))
             #print(np.shape(new_slices))
             #final_slices.append(slice_chunk)
             if (not redundancy(new_slices[0])):
                 #print('added chunk!')
                 if(lowerTeethSlice <= count <= upperTeethSlice) and not include_all_slices:
-                    final_slices.append(slice_chunk)
+                    final_slices.append(new_slices[0])
                 elif(include_all_slices):
-                    final_slices.append(slice_chunk)
+                    final_slices.append(new_slices[0])
                 if visualize:
                     fig = plt.figure()
                     for num, each_slice in enumerate(new_slices[0]):
@@ -139,6 +140,8 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
             else:
                 #print('skipped chunk!')
                 pass
+            #if len(temp_chunk) > 0:
+                #print('len temp chunk:', len(temp_chunk))
             new_slices = []
         #print('count', count)
         imgList = []
@@ -191,5 +194,5 @@ for num, patient in enumerate(patients):
     except KeyError as e:
         print('Data has no label')
     print('numpy shape: ', np.shape(much_data))
-    np.save('3dData-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES), much_data)
-    print('Data saved in: 3dData-{}-{}-{}.npy'.format(SUB_IMG_SIZE, SUB_IMG_SIZE, NR_SLICES))
+    np.save(os.path.join('/media/ruben/Seagate Expansion Drive/bachelorProject/code/data/dentalArea','3dData-PAT'+str(num)+'-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES)), much_data)
+    print('Data saved in: 3dData-PAT'+str(num)+'-{}-{}-{}.npy'.format(SUB_IMG_SIZE, SUB_IMG_SIZE, NR_SLICES))

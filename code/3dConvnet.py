@@ -2,11 +2,11 @@ import tensorflow as tf
 import numpy as np
 
 #At the moment: online learning, one example at a time
-
+NUMBER_OF_PATIENTS = 10
 IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
 NR_SLICES = 10 #NR of axial slices used for one volume
 
-n_classes = 7
+n_classes = 14
 
 x = tf.placeholder('float')
 y = tf.placeholder('float')
@@ -18,7 +18,7 @@ def conv3d(x, W):
     return tf.nn.conv3d(x, W, strides=[1,1,1,1,1], padding='SAME')
 
 def maxpool3d(x):
-    #                        size of window         movement of window
+    #                          size of window     movement of window
     return tf.nn.max_pool3d(x, ksize=[1,2,2,2,1], strides=[1,2,2,2,1], padding='SAME')
 
 
@@ -26,7 +26,7 @@ def maxpool3d(x):
 def convolutional_neural_network(x):
     weights = {'W_conv1':tf.Variable(tf.random_normal([3,3,3,1,32])),
                'W_conv2':tf.Variable(tf.random_normal([3,3,3,32,64])),
-               'W_fc':tf.Variable(tf.random_normal([5997500,1024])),
+               'W_fc':tf.Variable(tf.random_normal([32448,1024])),
                'out':tf.Variable(tf.random_normal([1024, n_classes]))}
 
     biases = {'b_conv1':tf.Variable(tf.random_normal([32])),
@@ -46,7 +46,7 @@ def convolutional_neural_network(x):
     #64 is the amount of channels (features) from the last conv layer
     #13 and 5 are the image volume sizes after the 2 pool layers, which use windowsize 2 and stride 2
     # -1 signifies the automatically determined batch_size
-    fc = tf.reshape(conv2,[-1, 5997500]) #13*13*5*64
+    fc = tf.reshape(conv2,[-1, 32448]) #13*13*5*64
     fc = tf.nn.relu(tf.matmul(fc, weights['W_fc'])+biases['b_fc'])
     fc = tf.nn.dropout(fc, keep_rate)
 
@@ -54,10 +54,12 @@ def convolutional_neural_network(x):
 
     return output
 
-def train_neural_network(x):
-    dataset = np.load('data/dentalArea/3dData-50-50-10.npy')
+def train_neural_network(x, dataset):
+    print('shape dataset: ', np.shape(dataset))
     print('length dataset: ', len(dataset))
-    print(np.shape(dataset[0][0])) #Print shape of dataset (number of slices, widht, heigh). Number of slices are the means of a box of widht*height*NR_SLICES
+    print('number of classes: ', np.shape(dataset[0][1]))
+    print('dimensions of single image: ', np.shape(dataset[0][0]))
+    #print(np.shape(dataset[1][1])) #Print shape of dataset (number of slices, widht, heigh). Number of slices are the means of a box of widht*height*NR_SLICES
     train_data = dataset[:-5]
     validation_data = dataset[-5:]
 
@@ -66,6 +68,8 @@ def train_neural_network(x):
     optimizer = tf.train.AdamOptimizer().minimize(cost)
     
     hm_epochs = 100
+
+    
     with tf.Session() as sess:
         #sess.run(tf.initialize_all_variables()) #deprecated
         sess.run(tf.global_variables_initializer())
@@ -85,4 +89,6 @@ def train_neural_network(x):
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
         print('Accuracy:',accuracy.eval({x:[i[0] for i in validation_data], y:[i[1] for i in validation_data]}))
 
-train_neural_network(x)
+for patient in range(0, NUMBER_OF_PATIENTS):
+    dataset = np.load('data/dentalArea/3dData-PAT'+str(patient)+'-50-50-10.npy')
+    train_neural_network(x, dataset)
