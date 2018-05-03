@@ -1,5 +1,6 @@
 import dicom
 import os
+import re
 import pandas as pd
 
 data_dir = "/media/ruben/Seagate Expansion Drive/bachelorProject/data/final/" #"/media/ruben/Seagate Expansion Drive/bachelorProject/data/dentsplySirona/testData/"  #"/media/ruben/Seagate Expansion Drive/bachelorProject/data/final/"
@@ -25,10 +26,10 @@ import cv2
 import numpy as np
 import math
 
-IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
-NR_SLICES = 10 #NR of axial slices used for one volume
-SUB_IMG_SIZE = 50
-REDUNDANCY_THRESH = 1846427
+IMG_RESIZE = 50             #Pixel dimensions of axial slices after resize, NOT USED AT THE MOMENT
+NR_SLICES = 10              #NR of axial slices used for one volume
+SUB_IMG_SIZE = 50           #So the final volume of one example becomes SUB_IMG_SIZE*SUB_IMG_SIZE*NR_SLICES
+REDUNDANCY_THRESH = 1000 #Adjust if volume of examples is altered
 
 #store_path = '/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/' #'/media/ruben/Seagate Expansion Drive/bachelorProject/data/rewritten/'
 patCount = 0
@@ -74,9 +75,9 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
 
     ##############################
 
-    lowerTeethSlice = int(axial_df['lowerThresh'][num+1])
-    upperTeethSlice = int(axial_df['upperThresh'][num+1])
-    print("upper boundary: ", upperTeethSlice, "lower boundary: ", lowerTeethSlice)
+    lowerTeethSlice = int(axial_df['lowerThresh'][int(re.search(r'\d+', str(patient)).group())])
+    upperTeethSlice = int(axial_df['upperThresh'][int(re.search(r'\d+', str(patient)).group())])
+    #print("upper boundary: ", upperTeethSlice, "lower boundary: ", lowerTeethSlice)
 
     new_slices = []
     temp = []
@@ -111,17 +112,17 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
             temp = []
         #print(np.shape(imgList)) #NR slices, NR images, width image, height image
         #print('dims: ', dims)
-        count = 0
+        #count = 0
         for idx in range(0, dims*dims):
             for imgListidx in range(0, NR_SLICES):
-                count+=1
+                #count+=1
                 newList.append(imgList[imgListidx][idx]) #append NR_SLICES images to newList
             new_slices.append(newList) #shape 1, 10, 50, 50
             newList = []
             #print(np.shape(new_slices))
             #for slice_chunk in chunks(new_slices, NR_SLICES):
             #slice_chunk = list(map(mean, zip(*new_slices[0]))) # new_slices[0] has shape 10, 50, 50, so 10 slices of sub block
-            print('testshape', np.shape(new_slices[0]))
+            #print('testshape', np.shape(new_slices[0]))
             #print('slice chunk:', np.shape(slice_chunk))
             #print(np.shape(new_slices))
             #final_slices.append(slice_chunk)
@@ -131,7 +132,7 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
                     final_slices.append(new_slices[0])
                 elif(include_all_slices):
                     final_slices.append(new_slices[0])
-                if visualize:
+                if visualize and (lowerTeethSlice <= count <= upperTeethSlice):
                     fig = plt.figure()
                     for num, each_slice in enumerate(new_slices[0]):
                         y = fig.add_subplot(2, 5, num+1)
@@ -149,7 +150,7 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
     #print(len(slices), len(final_slices))
 
     #Make cleaner code in future
-    print('label: ', label)
+    #print('label: ', label)
     # if 0<=label<1100: 
     #     label = np.array([0,1])
     #     print('yes')
@@ -175,13 +176,15 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, include_a
 
     fig = plt.figure()
 
-    print(np.shape(final_slices))
-    print('MEAN: ', math.ceil(np.mean(totalList)))
+    print('final slices, numpy shape:', np.shape(final_slices))
+    #print('MEAN: ', math.ceil(np.mean(totalList)))
 
     return np.array(final_slices), label
 
-much_data = []
+
 for num, patient in enumerate(patients):
+    data_3d = []
+    print('\n')
     # print('pat:', patient)
     # if num%100==0:
     #     print('num:', num)
@@ -189,10 +192,10 @@ for num, patient in enumerate(patients):
     #     break
     try:
         img_data,label = process_data(num, patient,labels_df,IMG_RESIZE=IMG_RESIZE, NR_SLICES=NR_SLICES, include_all_slices = False, visualize=False)
-        [much_data.append([item,label]) for item in img_data] #original: much_data.append([img_data,label])
+        [data_3d.append([item,label]) for item in img_data] #original: data_3d.append([img_data,label])
         #This appends every sub image as a separate data point (so multiple datapoints from 1 patient)
+        print(np.shape(data_3d))
     except KeyError as e:
         print('Data has no label')
-    print('numpy shape: ', np.shape(much_data))
-    np.save(os.path.join('/media/ruben/Seagate Expansion Drive/bachelorProject/code/data/dentalArea','3dData-PAT'+str(num)+'-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES)), much_data)
+    np.save(os.path.join('/media/ruben/Seagate Expansion Drive/bachelorProject/code/data/dentalArea','3dData-PAT'+str(num)+'-{}-{}-{}.npy'.format(SUB_IMG_SIZE,SUB_IMG_SIZE,NR_SLICES)), data_3d)
     print('Data saved in: 3dData-PAT'+str(num)+'-{}-{}-{}.npy'.format(SUB_IMG_SIZE, SUB_IMG_SIZE, NR_SLICES))

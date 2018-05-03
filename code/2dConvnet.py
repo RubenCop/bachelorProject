@@ -2,7 +2,9 @@
 
 import tensorflow as tf
 import numpy as np
+import os
 
+NUMBER_OF_PATIENTS = 15
 IMG_RESIZE = 50 #Pixel dimensions of axial slices after resize
 NR_SLICES = 20 #NR of axial slices used for one volume
 
@@ -51,33 +53,36 @@ def convolutional_neural_network(x):
     return output
 
 def train_neural_network(x):
-    dataset = np.load('2dData-50-50.npy')
-    train_data = dataset[:-5]
-    validation_data = dataset[-5:]
+    for patient in range(0, NUMBER_OF_PATIENTS):
+        dataset = np.load(os.path.join('/media/ruben/Seagate Expansion Drive/bachelorProject/code/data/2dData', '2dData-PAT'+str(patient)+'-50-50.npy'))
+        train_data = dataset[:-5]
+        validation_data = dataset[-5:]
+        print(np.shape(dataset))
+        
+        '''
+        prediction = convolutional_neural_network(x)
+        cost = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction,labels=y))
+        optimizer = tf.train.AdamOptimizer().minimize(cost)
+        
+        hm_epochs = 10
+        with tf.Session() as sess:
+            #sess.run(tf.initialize_all_variables()) #deprecated
+            sess.run(tf.global_variables_initializer())
 
-    prediction = convolutional_neural_network(x)
-    cost = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction,labels=y))
-    optimizer = tf.train.AdamOptimizer().minimize(cost)
-    
-    hm_epochs = 10
-    with tf.Session() as sess:
-        #sess.run(tf.initialize_all_variables()) #deprecated
-        sess.run(tf.global_variables_initializer())
+            for epoch in range(hm_epochs):
+                epoch_loss = 0
+                #data is too big, segment in smaller sets during reading
+                for data in train_data:
+                    X = data[0]
+                    Y = data[1]
+                    _, c = sess.run([optimizer, cost], feed_dict={x: X, y: Y})
+                    epoch_loss += c
 
-        for epoch in range(hm_epochs):
-            epoch_loss = 0
-            #data is too big, segment in smaller sets during reading
-            for data in train_data:
-                X = data[0]
-                Y = data[1]
-                _, c = sess.run([optimizer, cost], feed_dict={x: X, y: Y})
-                epoch_loss += c
+                print('Epoch', epoch, 'completed out of',hm_epochs,'loss:',epoch_loss)
 
-            print('Epoch', epoch, 'completed out of',hm_epochs,'loss:',epoch_loss)
+            correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
 
-        correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
-
-        accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
-        print('Accuracy:',accuracy.eval({x:[i[0] for i in validation_data], y:[i[1] for i in validation_data]}))
-
+            accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
+            print('Accuracy:',accuracy.eval({x:[i[0] for i in validation_data], y:[i[1] for i in validation_data]}))
+        '''
 train_neural_network(x)

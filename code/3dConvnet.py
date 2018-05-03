@@ -42,11 +42,11 @@ def convolutional_neural_network(x):
     conv2 = tf.nn.relu(conv3d(conv1, weights['W_conv2']) + biases['b_conv2'])
     conv2 = maxpool3d(conv2)
 
-    #13*13*5*64
+    #13*13*3*64
     #64 is the amount of channels (features) from the last conv layer
     #13 and 5 are the image volume sizes after the 2 pool layers, which use windowsize 2 and stride 2
     # -1 signifies the automatically determined batch_size
-    fc = tf.reshape(conv2,[-1, 32448]) #13*13*5*64
+    fc = tf.reshape(conv2,[-1, 32448]) #13*13*3*64
     fc = tf.nn.relu(tf.matmul(fc, weights['W_fc'])+biases['b_fc'])
     fc = tf.nn.dropout(fc, keep_rate)
 

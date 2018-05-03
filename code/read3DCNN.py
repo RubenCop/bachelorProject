@@ -1,5 +1,6 @@
 import dicom
 import os
+import re
 import pandas as pd
 
 data_dir = "/media/ruben/Seagate Expansion Drive/bachelorProject/data/final/" #"/media/ruben/Seagate Expansion Drive/bachelorProject/data/dentsplySirona/testData/"  #"/media/ruben/Seagate Expansion Drive/bachelorProject/data/final/"
@@ -74,8 +75,8 @@ def process_data(num, patient, labels_df, IMG_RESIZE=50, NR_SLICES=20, visualize
 
     ##############################
 
-    lowerTeethSlice = int(axial_df['lowerThresh'][num+1])
-    upperTeethSlice = int(axial_df['upperThresh'][num+1])
+    lowerTeethSlice = int(axial_df['lowerThresh'][int(re.search(r'\d+', str(patient)).group())])
+    upperTeethSlice = int(axial_df['upperThresh'][int(re.search(r'\d+', str(patient)).group())])
     print("upper boundary: ", upperTeethSlice, "lower boundary: ", lowerTeethSlice)
 
     new_slices = []
