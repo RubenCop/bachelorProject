@@ -11,7 +11,6 @@ labelList = []
 watershedImageList = []
 distanceCheckedList = []
 center_coords = []
-
 binary_slices_for_model = []
 
 def show_image(image, second_image):
@@ -25,7 +24,7 @@ def find_centroid(image, idx):
     height, width = np.shape(image)
     image = np.uint8(image)
     print(width, height)
-    print(image[int(width/2), int(height/2)])
+    #print(image[int(width/2), int(height/2)])
 
     #Make image binary, hold former centroids
     ret, centroidImage = cv2.threshold(image,1,1,cv2.THRESH_BINARY)
@@ -68,22 +67,27 @@ def find_centroid(image, idx):
 
 def most_common_element(image):
     image = image.flatten()
-    print(np.shape(image))
     for num, idx in enumerate(image):
         if idx < 0:
             image[num] = 1000 #Arbitrary number, to filter out negative numbers
     counts = np.bincount(image)
-    return np.argmax(counts)
+    label = np.argmax(counts)
+    if label == 1:
+        counts[1] = 0
+        label = np.argmax(counts)
+    return label
 
 def findLabel(markers, width, height):
-    deviation = 10
+    deviation = 8
     middleX = int(width/2)
     middleY = int(height/2)
-
+    print('label image saved')
+    with open('labeeeeellllsss.txt', 'w') as f:
+        print(markers, file=f)
     center_image = markers[middleX-deviation : middleX+deviation, middleY-deviation : middleY+deviation]
     #Find the label of the center tooth
     label = most_common_element(center_image)
-    print(label)
+    print('label =:', label)
     return label
 
 def distance_check(image, idx):
@@ -123,7 +127,10 @@ def distance_check(image, idx):
 def teeth_watershed_2(visualize = False):
     for idx, image in enumerate(watershedImgs):
         img = cv2.imread(data_dir+image)
+        #0 pad image with 0 lines of width 1
+        img = cv2.copyMakeBorder(img, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        #print('gray image', gray)
         #Original
         #ret, thresh = cv2.threshold(gray,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU) #otsu thresholding finds optimal thresholding value w.r.t. gray image histogram
 
@@ -137,9 +144,10 @@ def teeth_watershed_2(visualize = False):
         cv2.floodFill(im_floodfill, mask, (0,0), 255)
         im_floodfill_inv = cv2.bitwise_not(im_floodfill)
         new_thresh = thresh | im_floodfill_inv
+        
         if visualize:
             show_image(thresh, new_thresh)
-
+        
         #Find out what parts are certainly teeth
         kernel = np.ones((3,3), np.uint8)
         opening = cv2.morphologyEx(new_thresh, cv2.MORPH_OPEN, kernel, iterations = 3)
@@ -149,9 +157,10 @@ def teeth_watershed_2(visualize = False):
 
         dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
         ret, sure_fg = cv2.threshold(dist_transform, 0.2*dist_transform.max(), 255, 0)
-
+        
         if visualize:
             show_image(sure_bg, sure_fg)
+        
         #Compute again to remove narrow bridges between sure_fg
         sure_fg = np.uint8(sure_fg)
         dist_transform = cv2.distanceTransform(sure_fg, cv2.DIST_L2, 5)
@@ -160,9 +169,10 @@ def teeth_watershed_2(visualize = False):
 
         sure_fg = np.uint8(sure_fg)
         unknown = cv2.subtract(sure_bg, sure_fg)
+        
         if visualize:
             show_image(sure_bg, sure_fg)
-
+        
         #Mark background with 0, 
         ret, markers = cv2.connectedComponents(sure_fg)
         markers = markers+1
@@ -172,14 +182,18 @@ def teeth_watershed_2(visualize = False):
             plt.imshow(markers, cmap='jet')
             plt.show()
 
+        '''
         print('datatype before: ', markers.dtype)
         with open('before.txt', 'w') as f:
             print(markers, file=f)
+        '''
         markers = find_centroid(markers, idx)
         markers = np.int32(markers)
+        '''
         with open('after.txt', 'w') as f:
             print(markers, file=f)
         print('datatype after: ', markers.dtype)
+        '''
 
         if visualize:
             plt.imshow(markers, cmap='jet')
@@ -223,33 +237,75 @@ def binaryImage(image, label):
     maxim = np.max(image)
     minim = np.min(image)
     print(minim, maxim)
+    print('final_image')
+    print('label: ', label)
+    '''
     image = np.uint8(image)
+    print('final_image')
+    plt.imshow(image, cmap='jet')
+    plt.show()
     ret1, thresh1 = cv2.threshold(image, label-1, maxim, cv2.THRESH_BINARY)
     ret2, thresh2 = cv2.threshold(image, label, maxim, cv2.THRESH_BINARY)
+    '''
+    '''
+    print('before saved')
+    with open('temp_imageee_before.txt', 'w') as f:
+        print(image, file=f)
+    '''
+    height, width = np.shape(image)
+    for x in range(0, height):
+        for y in range (0, width):
+            if image[x,y] == label:
+                image[x,y] = 1
+            else:
+                image[x,y] = 0
+    '''
+    print('after saved')
+    with open('temp_imageee_after.txt', 'w') as f:
+        print(image, file=f)
+    '''
+    
+    '''
     final = (thresh1 != thresh2) #Take difference between the 2 thresholded images to be left with segmented tooth
     #plt.imshow(final, cmap='jet')
     #plt.show()
     return final
+    '''
+    return image
 
 def processImage(visualize = False):
     for idx in range(0, len(watershedImageList)-1):
+        print('')
         image1 = watershedImageList[idx]
         image2 = distanceCheckedList[idx]
 
-        label1 = labelList[idx]
-        label2 = labelList[idx]
+        label =  labelList[idx]
 
-        bin_image1 = binaryImage(image1, label1)
-        bin_image2 = binaryImage(image2, label2)
+        bin_image1 = binaryImage(image1, label)
+        bin_image2 = binaryImage(image2, label)
 
         '''
-        plt.imshow(image1, cmap='jet')
+        plt.imshow(bin_image1, cmap='jet')
         plt.show()
-        plt.imshow(image2, cmap='jet')
+        plt.imshow(bin_image2, cmap='jet')
         plt.show()
         '''
+        
+        height, width = np.shape(bin_image1)
+        final_image = bin_image1.copy()
+        for x in range(0, height):
+            for y in range(0, width):
+                if bin_image1[x,y] == 1 and bin_image2[x,y] == 0:
+                    final_image[x,y] = 0
 
-        final_image = (bin_image1 == bin_image2)
+        #final_image = (bin_image1 == bin_image2)
+        print('final image')
+        plt.imshow(final_image, cmap='jet')
+        plt.show()
+
+        binary_slices_for_model.append(final_image)
+        np.save('binary_tooth_slices.npy', binary_slices_for_model)
+
         if visualize:
             print('no overlap binary images')
             plt.imshow(final_image, cmap='jet')
@@ -261,29 +317,11 @@ def processImage(visualize = False):
             plt.imshow(image2, cmap='jet')
             plt.show()
 
-        with open('watershedImg.txt', 'w') as f:
-            print(image1, file=f)
-
-        temp_image = final_image.copy()
-        height, width = np.shape(temp_image)
-        for x in range(height):
-            for y in range(width):
-                if (image1[x,y] != label1):
-                    temp_image[x,y] = False
-
-        final_image = (temp_image == final_image)
-        final_image = final_image.astype(int)
-        temp_image = temp_image.astype(int)
-        #print('final image')
-        #plt.imshow(temp_image, cmap='jet')
-        #plt.show()
-        binary_slices_for_model.append(temp_image)
-        np.save('binary_tooth_slices.npy', binary_slices_for_model)
-
+        
 
 teeth_watershed_2(visualize = True)
 #adjust_masks()
-processImage(visualize = True)
+processImage(visualize = False)
 #construct3DModel()
 #find_centroid()
 #Find Contours
@@ -297,7 +335,7 @@ processImage(visualize = True)
 
 
 
-
+#DUMP########################################
 def teeth_watershed():
     for image in watershedImgs:
         img = cv2.imread(data_dir+image)

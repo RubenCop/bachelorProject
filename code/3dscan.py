@@ -37,6 +37,7 @@ NR_PATIENTS = 4
 #loads DICOM images from folder into list for manipulation
 def load_scan(path):
     slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
+    print(slices)
     slices.sort(key = lambda x: int(x.InstanceNumber))
     try:
         slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
@@ -88,6 +89,7 @@ for i in range(1,   NR_PATIENTS+1):
 ###################Displaying an image stack###########################
 imgs_to_process = np.load(O_PATH+"fullimages_%d.npy" % id)
 patient = load_scan(PATH+'pat1')
+print(len(patient))
 
 def sample_stack(stack, rows=6, cols=6, start_with=10, show_every=6):
     fig, ax = plt.subplots(rows, cols, figsize=[12,12])
@@ -102,6 +104,7 @@ sample_stack(imgs_to_process)
 
 ##########################Resampling####################################
 imgs_to_process = np.load(O_PATH+'fullimages_%d.npy' % id)
+print(type(imgs_to_process), np.shape(imgs_to_process))
 def resample(image, scan, new_spacing=[1,1,1]):
     spacing = map(float, ([scan[0].SliceThickness] + scan[0].PixelSpacing))
     spacing = np.array(list(spacing))
@@ -118,6 +121,7 @@ def resample(image, scan, new_spacing=[1,1,1]):
 
 print("Shape before resampling\t", imgs_to_process.shape)
 imgs_after_resamp, spacing = resample(imgs_to_process, patient, [1,1,1])
+print('typeee', type(imgs_after_resamp))
 print("Shape after resampling\t", imgs_after_resamp.shape)
 
 

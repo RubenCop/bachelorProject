@@ -8,24 +8,55 @@ import imutils
 from skimage import measure
 import plotly.figure_factory as FF
 import plotly.plotly as py
+import scipy.ndimage
+np.set_printoptions(threshold=np.nan)
 
-binary_slices_for_model = np.load('binary_tooth_slices.npy')
+#binary_slices_for_model = np.load('binary_tooth_slices.npy')
+binary_slices_for_model = np.load('binary_expert_slices.npy')
 print('shape binary tooth slices: ', np.shape(binary_slices_for_model))
 resized_images = []
 
-def reshapeImgs():
-    for idx, img in enumerate(binary_slices_for_model):
-        #plt.imshow(image, cmap='jet')
-        #plt.show()
-
-        difference = abs(min((len(img)-len(img[1])), (len(img[1])-len(img))))
-        print('diff', difference)
+def largest_dims():
+    H = W = 0
+    for img in binary_slices_for_model:
         height, width = np.shape(img)
-        if height > width:
-            resized_images.append(cv2.copyMakeBorder(img, 0, 0, 0, difference, cv2.BORDER_CONSTANT, value=0))
-        if height < width:
-            resized_images.append(cv2.copyMakeBorder(img, 0, difference, 0, 0, cv2.BORDER_CONSTANT, value=0))
-    print(np.shape(binary_slices_for_model))
+        if H < height:
+            H = height
+        if W < width:
+            W = width
+    return H, W
+
+
+#Make sure the images are a square
+def reshapeImgs(expert_model = False):
+    if(expert_model):
+        H, W = largest_dims()
+        for idx, img in enumerate(binary_slices_for_model):
+            #plt.imshow(image, cmap='jet')
+            #plt.show()
+            height, width = np.shape(img)
+            difH = H-height
+            difW = W-width
+            #top, bottom, left, right
+            resized_images.append(cv2.copyMakeBorder(img, 0, difH, 0, difW, cv2.BORDER_CONSTANT, value=0))
+            print(np.shape(resized_images[-1]))
+    else:
+        for idx, img in enumerate(binary_slices_for_model):
+            #plt.imshow(image, cmap='jet')
+            #plt.show()
+
+            difference = abs(min((len(img)-len(img[1])), (len(img[1])-len(img))))
+            height, width = np.shape(img)
+            if height > width:
+                resized_images.append(cv2.copyMakeBorder(img, 0, 0, 0, difference, cv2.BORDER_CONSTANT, value=0))
+            if height < width:
+                resized_images.append(cv2.copyMakeBorder(img, 0, difference, 0, 0, cv2.BORDER_CONSTANT, value=0))
+            print(np.shape(resized_images[idx]))
+        print(np.shape(binary_slices_for_model))
+
+def resample(image, new_spacing=[1,1,1]):
+    image = scipy.ndimage.interpolation.zoom(image, 0.5)
+    return image
 
 def make_3d_array():
     D3_array = resized_images[0]
@@ -69,10 +100,11 @@ def plotly_3d(verts, faces):
     print('Drawing')
     colormap = ['rgb(1,0,0)', 'rgb(1,0,0)']
     fig = FF.create_trisurf(x=x, y=y, z=z, plot_edges=False, colormap='Portland', simplices=faces, backgroundcolor='rgb(64,64,64)', title="Interactive Visualization")
-    py.iplot(fig, filename="tooth_test")
+    py.iplot(fig, filename="tooth_test_2")
 #construct3DModel()
-reshapeImgs()
+reshapeImgs(expert_model = True)
 d3_structure = make_3d_array()
 print(np.shape(d3_structure))
+d3_structure = resample(d3_structure)
 v, f = make_mesh(d3_structure)
 plotly_3d(v,f)

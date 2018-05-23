@@ -45,7 +45,7 @@ axes = mplot3d.Axes3D(figure)
 
 #load .stl file
 mesh = mesh.Mesh.from_file('/media/ruben/Seagate Expansion Drive/bachelorProject/test/Geit Gerda_Test_001.stl')
-
+print('datatype:', type(mesh))
 
 total = len(mesh.v0) + len(mesh.v1) + len(mesh.v2)
 print('Total amount of vertices: ', total)
